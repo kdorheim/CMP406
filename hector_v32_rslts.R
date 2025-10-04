@@ -13,7 +13,8 @@ HIST_DATES <- 1750:2005
 
 
 VARS <- c(GLOBAL_TAS(), RF_TOTAL(), RF_CO2(), RF_VOL(), RF_CH4(), 
-          CONCENTRATIONS_CH4(), "TAU_OH", CONCENTRATIONS_N2O(), RF_N2O())
+          CONCENTRATIONS_CH4(), "TAU_OH", CONCENTRATIONS_N2O(), RF_N2O(), 
+          CONCENTRATIONS_CO2(), HEAT_FLUX())
 
 # 1. Run old hector ------------------------------------------------------------
 
@@ -38,8 +39,6 @@ lapply(inis, function(ini){
   bind_rows -> 
   full_out
 
-
-
 # Run gcam-history 
 ini <- here::here("inputs", "old", "hector-gcam.ini")
 hc <- newcore(ini)
@@ -51,8 +50,24 @@ fetchvars(hc, HIST_DATES, VARS) %>%
   old_hist
 
 
+# Recall that GCAM users are going to be looking at the temp anomaly relative
+# to the 1850:1900 reference period, let's make sure that we normalize those temp 
+# results. 
+old_hist %>% 
+  filter(year %in% 1850:1900) %>% 
+  filter(variable == GLOBAL_TAS()) %>% 
+  summarise(ref = mean(value), .by = variable) -> 
+  ref_value 
+
+rbind(full_out, old_hist) %>% 
+  full_join(ref_value) %>% 
+  replace(is.na(.), 0) %>% 
+  mutate(value = value - ref) %>% 
+  select(-ref) -> 
+  out
+
+
 # 2. Save Results ------------------------------------------------------------
 
-out <- rbind(full_out, old_hist)
 write.csv(out, file = file.path("data", "hector_v32_rslts.csv"), row.names = FALSE)
 
