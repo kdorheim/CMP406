@@ -36,7 +36,7 @@ my_ggsave <- function(plot, name, type = ".png", WIDTH = 6, HEIGHT = 4){
   old
 
 # This should be updated! 
-"data/hector_v349_rslts.csv" %>% 
+"data/hector_v350_rslts.csv" %>% 
   read.csv() -> 
   new
 
@@ -46,10 +46,10 @@ new %>%
 
 # Calculate the difference between variables. 
 long_df %>% 
-  pivot_wider(names_from = version, values_from = value) %>% 
+  pivot_wider(names_from = version, values_from = value) %>%  
   # Since the old historical run will end earlier. 
   na.omit %>% 
-  mutate(error = `V3.4.9` - `V3.2.0`) -> 
+  mutate(error = `V3.5.0` - `V3.2.0`) -> 
   error_df
 
 # Get the MAE for the variable and scenarios! 
@@ -93,17 +93,10 @@ long_df %>%
 my_ggsave(plot, name = "gcam-hist", WIDTH = 10, HEIGHT = 10)
 
 
-# Get the CMIP6 era historical GHG concentrations, note these are not 
+# Get the CMIP7 GHG concentrations to use in the comparisons.  note these are not 
 # the concentrations we used in calibration 
-system.file(package = "hector", "input/tables") %>% 
-  list.files(pattern = "ssp245_emiss-constraints_rf.csv", full.names = TRUE) %>% 
-  read.csv(comment.char = ";") %>% 
-  select(year = Date, 
-         CH4_concentration = CH4_constrain, 
-         N2O_concentration = N2O_constrain, 
-         CO2_concentration = CO2_constrain) %>% 
-  pivot_longer(-year, names_to = "variable") %>% 
-  filter(year %in% 1750:2015) -> 
+"data/C.ghg_data.csv" %>% 
+  read.csv() -> 
   hist_values
 
 long_df %>% 
@@ -118,7 +111,7 @@ ggplot() +
   geom_line(data = hist_values, aes(year, value)) + 
   geom_line(data = hector_to_plot, aes(year, value, color = version, linetype = version), 
             linewidth = 1) + 
-  labs(x = NULL, y = NULL, title = "GCAM Historical") + 
+  labs(x = NULL, y = NULL, title = "GCAM Historical", "black line: cmip7 GHGs") + 
   facet_wrap("variable", scales = "free", ncol = 1) -> 
   plot; plot
 my_ggsave(plot, name = "gcam-hist_ghgs", WIDTH = 5, HEIGHT = 5)
@@ -128,7 +121,7 @@ my_ggsave(plot, name = "gcam-hist_ghgs", WIDTH = 5, HEIGHT = 5)
 long_df %>% 
   filter(scenario == "gcam-hist") %>% 
   filter(variable %in% CONCENTRATIONS_CH4()) %>% 
-  mutate(run = if_else(version == "V3.4.9", "new", "old")) -> 
+  mutate(run = if_else(version == "V3.5.0", "new", "old")) -> 
   hector_to_plot 
 
 ggplot() + 
@@ -136,7 +129,7 @@ ggplot() +
               filter(variable == CONCENTRATIONS_CH4()), aes(year, value)) + 
   geom_line(data = hector_to_plot, aes(year, value, color = run), linetype = 2, 
             linewidth = 1) + 
-  labs(x = NULL, y = NULL, title = "GCAM Historical") + 
+  labs(x = NULL, y = NULL, title = "GCAM Historical", "black line: cmip7 GHGs") + 
   facet_wrap("variable", scales = "free", ncol = 1) -> 
   plot; plot
 my_ggsave(plot, name = "gcam-hist_ch4", WIDTH = 5, HEIGHT = 5)
@@ -145,7 +138,7 @@ my_ggsave(plot, name = "gcam-hist_ch4", WIDTH = 5, HEIGHT = 5)
  long_df %>% 
   filter(scenario == "gcam-hist") %>% 
   filter(variable %in% CONCENTRATIONS_N2O()) %>% 
-  mutate(run = if_else(version == "V3.4.9", "new", "old")) -> 
+  mutate(run = if_else(version == "V3.5.0", "new", "old")) -> 
   hector_to_plot 
 
 ggplot() + 
@@ -153,7 +146,7 @@ ggplot() +
               filter(variable == CONCENTRATIONS_N2O()), aes(year, value)) + 
   geom_line(data = hector_to_plot, aes(year, value, color = run), linetype = 2, 
             linewidth = 1) + 
-  labs(x = NULL, y = NULL, title = "GCAM Historical") + 
+  labs(x = NULL, y = NULL, title = "GCAM Historical", "black line: cmip7 GHGs") + 
   facet_wrap("variable", scales = "free", ncol = 1) -> 
   plot; plot
 
@@ -161,7 +154,7 @@ my_ggsave(plot, name = "gcam-hist_n2o", WIDTH = 5, HEIGHT = 5)
 
 
 # Natural N2O Emissions 
-here::here("inputs/new/default_emissions.csv") %>% 
+here::here("inputs/new/default_inputs.csv") %>% 
   read.csv(comment.char = ";") %>% 
   select(year = Date, value = N2O_natural_emissions) %>% 
   mutate(variable = NAT_EMISSIONS_N2O(), 
@@ -256,7 +249,7 @@ my_ggsave(plot, name = "ssps_GHGs", WIDTH = 10, HEIGHT = 5)
   mutate(year = as.integer(gsub(x = year, replacement = "", pattern = "X"))) -> 
   old_idealized_rslts
 
-"data/hector_v349_idealized_rslts.csv" %>% 
+"data/hector_v350_idealized_rslts.csv" %>% 
   read.csv -> 
   new_idealized_rslts
 
@@ -363,20 +356,6 @@ vars <- c(RF_TOTAL(), GMST())
 plot4 <- my_plot(vars, MAE_df, long_df); plot4
 my_ggsave(plot4, name = "gcam-EBM", WIDTH = 8, HEIGHT = 4)
 
-
-# my_plot(RF_SO2(), MAE_df, long_df)
-# my_plot(RF_BC(), MAE_df, long_df)
-# my_plot(RF_OC(), MAE_df, long_df)
-# my_plot(RF_CO2(), MAE_df, long_df)
-# my_plot(RF_CH4(), MAE_df, long_df)
-# my_plot(CONCENTRATIONS_CH4(), MAE_df, long_df)
-# 
-# 
-# long_df %>% 
-#   filter(grepl(pattern = "RF", variable)) %>% 
-#   ggplot(aes(year, value, color = scenario)) + 
-#   geom_line() + 
-#   facet_wrap("variable", scales = "free")
 
 
 

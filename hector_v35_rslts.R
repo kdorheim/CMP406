@@ -5,8 +5,7 @@
 # 0. Set Up --------------------------------------------------------------------
 library(dplyr)
 library(ggplot2)
-# Problem is that this version of Hector is not calibrated yet! 
-remotes::install_github("jgcri/hector@dev")
+remotes::install_github("jgcri/hector@v3.5.0")
 library(hector)
 
 DATES <- 1750:2100
@@ -18,7 +17,7 @@ VARS <- c(GLOBAL_TAS(), RF_TOTAL(), RF_CO2(), RF_VOL(), RF_CH4(),
 
 # Using the input 
 # TODO there should be a better way to do this incase needs updating 
-PARS <- c("diff" = 0.687, "beta" = 	0.785, "q10_rh" = 1.245)
+PARS <- c("diff" = 0.821, "beta" = 	0.866, "q10_rh" = 1.884)
 
 # Helper function that sets an active Hector core with user defined parameters
 # Args
@@ -62,7 +61,7 @@ lapply(inis, function(ini){
   fetchvars(hc, DATES, VARS) %>% 
     mutate(scenario = scn) %>% 
     mutate(source = "hector", 
-           version = "V3.4.9") -> 
+           version = "V3.5.0") -> 
     old
   
   return(old)
@@ -80,7 +79,7 @@ run(hc, runtodate = max(HIST_DATES))
 fetchvars(hc, HIST_DATES, VARS) %>% 
   mutate(scenario = "gcam-hist") %>% 
   mutate(source = "hector", 
-         version = "V3.4.9") -> 
+         version = "V3.5.0") -> 
   old_hist
 
 
@@ -138,5 +137,5 @@ idealized_v35 %>%
 # z. Save Results ------------------------------------------------------------
 
 out <- rbind(full_out, old_hist)
-write.csv(out, file = file.path("data", "hector_v349_rslts.csv"), row.names = FALSE)
-write.csv(idealized_v35, file = file.path("data", "hector_v349_idealized_rslts.csv"), row.names = FALSE)
+write.csv(out, file = file.path("data", "hector_v350_rslts.csv"), row.names = FALSE)
+write.csv(idealized_v35, file = file.path("data", "hector_v350_idealized_rslts.csv"), row.names = FALSE)
