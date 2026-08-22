@@ -1,34 +1,37 @@
-# Extract the results from the GCAM database! 
+# Extract the results from the GCAM database! This script assumes that 
+# GCAM has already been run locally with the new model devlopment we
+# would like to asses as part of the CMP. 
 
 # 0. Set Up --------------------------------------------------------------------
-
+# Load the required CRAN packages
 library(dplyr)
 library(ggplot2)
-#library(GCAM2Hector)
 library(rgcam)
 
 
-#remotes::install_github("jgcri/hector@dev")
+# There are several R packages that are not on CRAN, make sure that the correct
+# versions are being installed/called. 
+# TODO there should be a better way to handle this. 
+remotes::install_github("jgcri/hector@gcam-integrationv3")
 library(hector)
 devtools::load_all("/Users/dorh012/Documents/2025/GCAM2Hector")
 
 
+
+GCAM_DB_DIR <- "~/Documents/GCAM-WD/gcam-core/output/"
+
+
 # 1. Extract Climate Results ---------------------------------------------------
 
-prj_file <- file.path("data", "gcam.dat")
-db_dir <- "~/Documents/GCAM-WD/gcam-core/output/"
-
-get_all_queries(db_dir = db_dir, 
+prj_file <- file.path("data", "new_gcam.dat")
+# FYI the get_all_queries function comes from my GCAM2Hector package.
+get_all_queries(db_dir = GCAM_DB_DIR, 
                 db_name = "database_basexdb", 
                 prj_file = prj_file)
 
 fetch_GCAM_vs_hector(prj_file = prj_file) %>%  
   mutate(version = "new") %>% 
-  write.csv(file = file.path("data", "gcam_climate.csv"), row.names = FALSE)
-
-
-
-
+  write.csv(file = file.path("data", "new_gcam_climate.csv"), row.names = FALSE)
 
 
 # 2. Extract Emissions ---------------------------------------------------------
@@ -58,7 +61,7 @@ gcam_emiss %>%
   geom_point(aes(year, value))
 
 
-write.csv(gcam_emiss, file = file.path("data", "extracted_gcam_emiss.csv"), row.names = FALSE)
+write.csv(gcam_emiss, file = file.path("data", "new_extracted_gcam_emiss.csv"), row.names = FALSE)
 
 
 

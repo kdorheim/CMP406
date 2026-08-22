@@ -8,15 +8,14 @@ library(ggplot2)
 remotes::install_github("jgcri/hector@v3.5.0")
 library(hector)
 
-DATES <- 1750:2100
+DATES      <- 1750:2100
 HIST_DATES <- 1750:2022
+VARS       <- c(GLOBAL_TAS(), RF_TOTAL(), RF_CO2(), RF_VOL(), RF_CH4(), 
+                CONCENTRATIONS_CH4(), "TAU_OH", CONCENTRATIONS_N2O(), RF_N2O(), 
+                CONCENTRATIONS_CO2(), HEAT_FLUX(), GMST())
 
-VARS <- c(GLOBAL_TAS(), RF_TOTAL(), RF_CO2(), RF_VOL(), RF_CH4(), 
-          CONCENTRATIONS_CH4(), "TAU_OH", CONCENTRATIONS_N2O(), RF_N2O(), 
-          CONCENTRATIONS_CO2(), HEAT_FLUX())
-
-# Using the input 
-# TODO there should be a better way to do this incase needs updating 
+# Define the parameters used in the gcam-hector
+# TODO there should be a better way to do this if the parameters need updating. 
 PARS <- c("diff" = 0.821, "beta" = 	0.866, "q10_rh" = 1.884)
 
 # Helper function that sets an active Hector core with user defined parameters
@@ -47,14 +46,14 @@ my_setvar_fxn <- function(hc, pars = PARS){
 
 # 1. SSP Runs ------------------------------------------------------------
 
-# Run all of the SSP scenarios just incase we want to include them... 
+# Run all of the SSP scenarios just in case we want to include them... 
 inis <- list.files(system.file(package = "hector", "input"), 
                    pattern = "ssp", full.names = TRUE)
 
 lapply(inis, function(ini){
   scn <- gsub(basename(ini), replacement = "", pattern = "hector_|.ini")
   
-
+  
   hc <- my_setvar_fxn(newcore(ini))
   
   run(hc)
@@ -101,17 +100,12 @@ rbind(full_out, old_hist) %>%
 
 
 # 3. Idealized Inputs ---------------------------------------------------------
-devtools::load_all("~/Documents/Hector-WD/hector/")
-
 variables <- c("global_tas", "gmst", "land_tas", "RF_tot",
                "CO2_concentration", "RF_CO2", "NPP", "veg_c",
                "soil_c", "detritus_c", "sst", "heatflux", 
                "HL_sst", "LL_sst" , "HL_ocean_c", "LL_ocean_c", 
                "IO_ocean_c", "DO_ocean_c", "CH4_concentration",
                "HL_ocean_uptake", "ocean_uptake")    
-
-
-
 
 
 c("inputs/hector_abruptx4CO2.ini", 

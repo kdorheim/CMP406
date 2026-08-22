@@ -1,34 +1,36 @@
-# Extract the results from the old GCAM database! 
+# Extract the results from the "older version" of GCAM, aka the master branch 
+# that this CMP is being merged into. For CMP406 we are aiming to merge into. 
+# This script assumes that the output dir from GCAM master runs on pic have
+# been donloaded and are up to date.
 
 # 0. Set Up --------------------------------------------------------------------
-
+# Load the required CRAN packages
 library(dplyr)
 library(ggplot2)
-#library(GCAM2Hector)
 library(rgcam)
 
 
-#remotes::install_github("jgcri/hector@dev")
+# There are several R packages that are not on CRAN, make sure that the correct
+# versions are being installed/called. 
+# TODO there should be a better way to handle this. 
+remotes::install_github("jgcri/hector@gcam-integrationv3")
 library(hector)
 devtools::load_all("/Users/dorh012/Documents/2025/GCAM2Hector")
+
+GCAM_DB_DIR <- "~/Documents/GCAM-WD/CMPs/CMP406/old-GCAM"
 
 
 # 1. Extract Climate Results ---------------------------------------------------
 
-prj_file <- file.path("data", "gcam-old.dat")
-db_dir <- "~/Documents/GCAM-WD/CMPs/CMP406/Gv8-Hv3.2"
-
-get_all_queries(db_dir = db_dir, 
+prj_file <- file.path("data", "old_gcam.dat")
+# FYI the get_all_queries function comes from my GCAM2Hector package.
+get_all_queries(db_dir = GCAM_DB_DIR, 
                 db_name = "database_basexdbGCAM", 
                 prj_file = prj_file)
 
 fetch_GCAM_vs_hector(prj_file = prj_file) %>%  
   mutate(version = "old") %>% 
   write.csv(file = file.path("data", "old_gcam_climate.csv"), row.names = FALSE)
-
-
-
-
 
 
 # 2. Extract Emissions ---------------------------------------------------------
@@ -50,12 +52,6 @@ getQuery(prj_data, "emissions by region") %>%
   mutate(source = "GCAM") %>% 
   mutate(version = "old") -> 
   gcam_emiss
-
-
-gcam_emiss %>% 
-  filter(variable == EMISSIONS_BC()) %>% 
-  ggplot() + 
-  geom_point(aes(year, value))
 
 
 write.csv(gcam_emiss, file = file.path("data", "old_extracted_gcam_emiss.csv"), row.names = FALSE)

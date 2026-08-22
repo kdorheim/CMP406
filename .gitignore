@@ -6,3 +6,9 @@
 Gv8-Hv3.2/
 data/temp-*
 scratch
+*.csv
+*.ini
+*.dat
+
+old-rslts/
+old-GCAM/
