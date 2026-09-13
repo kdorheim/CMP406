@@ -6,7 +6,7 @@
 # that the gcamhector output stream existis. 
 # 
 # V3.2.0 has some R dependency issues so if you want to run hector locally 
-# the easiest thing to do is to check out v3.2.0-12-g4bc2383 build and run 
+# the easiest thing to do is to check out v3.2.0-4bc2383 build and run 
 # from command line. 
 # 
 # 
@@ -15,6 +15,8 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(here)
+
+source("0.AR6_benchmark_fxns.R")
 
 
 # This version of hector does not matter, since we are just using it for the 
@@ -25,9 +27,9 @@ DATES <- 1750:2100
 HIST_DATES <- 1750:2005
 
 
-VARS <- c(GLOBAL_TAS(), RF_TOTAL(), RF_CO2(), RF_VOL(), "RF_CH4",
-          CONCENTRATIONS_CH4(), "TAU_OH", CONCENTRATIONS_N2O(), RF_N2O(),
-          CONCENTRATIONS_CO2(), HEAT_FLUX(), GMST())
+VARS       <- c("global_tas", "RF_tot", "RF_CO2", "RF_vol", "RF_CH4", "CH4_concentration", "TAU_OH", "N2O_concentration",
+                "RF_N2O", "CO2_concentration", "heatflux", "gmst", "RF_BC", "RF_OC", "RF_NH3", "RF_SO2",
+                "RF_aci", "RF_O3_trop", "RF_H2O_strat", "RF_albedo", "RF_misc")
 
 # 1. hector-run-archive data set -----------------------------------------------
 url("https://zenodo.org/records/17459384/files/output-V3.2.0.csv") %>%
@@ -67,7 +69,7 @@ here("master-GCAM") %>%
 # scenarios.
 hector_output %>% 
   filter(scenario %in% c("abruptx4CO2", "abruptx2CO2" ,"1pctCO2")) %>%
-  filter(variable %in% c(RF_TOTAL(), GLOBAL_TAS())) %>%
+  filter(variable %in% c(RF_TOTAL(), GLOBAL_TAS(), CONCENTRATIONS_CO2())) %>%
   pivot_longer(cols = starts_with("X")) %>%
   mutate(year = as.integer(gsub(x = name, pattern = "X", replacement = ""))) %>%
   select(version, scenario, variable, units, value, year) %>% 
@@ -78,11 +80,28 @@ hector_output %>%
 
 # 4. AR6 Outputs ---------------------------------------------------------------
 
-url("https://zenodo.org/records/17459384/files/AR6_benchmarks-V3.2.0.csv") %>%
-  read.csv() %>% 
-  select(-commit) -> 
-  AR6_rslts
+# Calculate the AR6 results. 
+# Create a temp file to save the hector results in that are required for the 
+# AR6 results. 
+ssp_v32 %>% 
+  filter(scenario == "ssp245") %>% 
+  mutate(scenario = if_else(scenario == "ssp245", "gcam-hist", scenario)) -> 
+  fake_gcam_hist
+  
+rbind(ssp_v32, idealized_v32, fake_gcam_hist) %>% 
+  select(version, value, year, variable, scenario, units) %>% 
+  mutate(year = paste0("X", year)) %>% 
+  pivot_wider(names_from = year) %>%  
+  mutate(version = "3.2.0") -> 
+  o 
 
+temp_file <- tempfile()
+
+write.csv(o, file = temp_file, row.names = FALSE)
+AR6_rslts <- get_AR6_benchmarks(file = temp_file)
+
+# Remove the temp file as part of clean up!
+file.remove(temp_file)
 
 # 5. Save Outputs --------------------------------------------------------------
 
@@ -92,5 +111,5 @@ bind_rows(gcamhist, ssp_v32) %>%
 
 write.csv(out, file = file.path("data", "hector_v320_rslts.csv"), row.names = FALSE)
 write.csv(idealized_v32, file = file.path("data", "hector_v320_idealized_rslts.csv"), row.names = FALSE)
-write.csv(AR6_rslts, file = file.path(WIRTE_TO, "hector_v320_AR6_rslts.csv"), row.names = FALSE)
+write.csv(AR6_rslts, file = file.path("data", "hector_v320_AR6_rslts.csv"), row.names = FALSE)
 

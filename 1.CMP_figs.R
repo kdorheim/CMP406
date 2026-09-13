@@ -32,7 +32,7 @@ ggplot_colors <- function(n) {
 
 my_colors <- ggplot_colors(n = 2)
 COLOR_SCHEME <- c("old" = my_colors[1], "new" = my_colors[2], 
-                  "V3.2.0" = my_colors[1], "V3.5.0" = my_colors[2], 
+                  "V3.2.0" = my_colors[1], "V3.5.5" = my_colors[2], 
                   "cmip7" = "black", 
                   "BerkeleyEarthGlobal" = "black", 
                   "HadCRUT5Global" = "black", 
@@ -45,8 +45,8 @@ GCAM_COLOR_SCHEME <- c(GCAM_COLOR_SCHEME, "pre-gcam hist." = "black")
 
 # Global options for plotting 
 TYPE <- "png"
-WIDTH <- 10 
-HEIGHT <- 8
+WIDTH <- 6 
+HEIGHT <- 4
 
 # Options for cleaning up the environment 
 CLEAN_UP <- FALSE
@@ -142,7 +142,7 @@ plot_inputs_fxn <- function(data, variables, write_to,
       RMSE_df_to_plot
     
     # subset and format the RMSE results to be included in the plot. 
-    tibble(x = Inf, 
+    tibble(x = -Inf, 
            y = -Inf, 
            label = list(RMSE_df_to_plot)) -> 
       RMSE_tib
@@ -152,11 +152,11 @@ plot_inputs_fxn <- function(data, variables, write_to,
       to_plot 
     
     ggplot() +
-      geom_line(data = to_plot, aes(year, value, color = source, linetype = source)) +
+      geom_line(data = to_plot, aes(year, value, color = source, linetype = source), linewidth = 0.75) +
       labs(x = NULL, title = "GCAM-Hector Input Comparison", subtitle = v, y = getunits(v)) + 
       theme(legend.title = element_blank(), legend.position = "bottom") +
       geom_table(data = RMSE_tib, aes(x = x, y = y, label = label),
-                 hjust = 1, vjust = 0) + 
+                 hjust = 0, vjust = -1) + 
       scale_color_manual(values = COLOR_SCHEME) -> 
       p 
     
@@ -268,7 +268,7 @@ plot_emiss_transition <- function(hist_data,
     # Make the plot! 
     ggplot() + 
       geom_vline(xintercept = 2023, color = "grey") + 
-      geom_line(data = hist_to_plot, aes(year, value, color = "pre-gcam hist.")) +
+      geom_line(data = hist_to_plot, aes(year, value, color = "pre-gcam hist."), linewidth = 0.75) +
       geom_line(data = gcam_to_plot, aes(year, value, color = scenario), alpha = 0.25) + 
       geom_point(data = gcam_to_plot, aes(year, value, color = scenario)) + 
       labs(title = "Transition of historical to GCAM emissions", 
@@ -309,11 +309,12 @@ here("data") %>%
   list.files(pattern = "GCAM_new_rslts|GCAM_old_rslts", full.names = TRUE) %>% 
   lapply(read.csv) %>% 
   bind_rows %>% 
-  filter(!grepl(pattern = "emiss|uptake", x = variable)) %>%
-  na.omit -> 
+  filter(!grepl(pattern = "emiss|uptake", x = variable)) %>% 
+  na.omit %>% 
+  filter(scenario %in% c("Reference", "GCAM_SSP1", "GCAM_SSP3", "GCAM_SSP5")) -> 
   gcam_rslsts
 
-## 3B. Load Data  --------------------------------------------------------------
+## 3B. Helper Function  --------------------------------------------------------
 
 # Helper function that plots the GCAM results against one another
 # Args 
@@ -360,7 +361,7 @@ plot_gcam_fxn <- function(data, variables, write_to,
       to_plot 
     
     ggplot() +
-      geom_line(data = to_plot, aes(year, value, color = version, linetype = version)) +
+      geom_line(data = to_plot, aes(year, value, color = version, linetype = version), linewidth = 0.75) +
       labs(x = NULL, title = "GCAM-Hector Comparison", subtitle = v, y = getunits(v)) + 
       theme(legend.title = element_blank(), legend.position = "bottom") +
       geom_text(data = RMSE_tib, aes(x = x, y = y, label = label), 
@@ -406,7 +407,8 @@ data.frame(rslts = list.files(here("data"), pattern = "v32|v35", full.names = TR
       mutate(year = as.integer(gsub(pattern = "X", replacement = "", x = year)))
   }) %>%
   bind_rows %>% 
-  distinct -> 
+  distinct %>% 
+  filter(year <= 2100) -> 
   hector_rslts
 
 ## 4B. Helper Functions  --------------------------------------------------------
@@ -431,7 +433,7 @@ plot_hector_fxn <- function(data, variables, write_to, tag,
     distinct %>% 
     pivot_wider(names_from = version, values_from = value) %>%
     na.omit %>% 
-    mutate(SE = (`V3.2.0` - V3.5.0)^2) %>% 
+    mutate(SE = (`V3.2.0` - V3.5.5)^2) %>% 
     summarise(RMSE = sqrt(mean(SE)), .by = c(variable, units, scenario)) %>%
     mutate(RMSE = signif(RMSE, digits = 3)) -> 
     RMSE_df
@@ -463,7 +465,7 @@ plot_hector_fxn <- function(data, variables, write_to, tag,
     ggplot() +
       geom_line(data = to_plot,
                 aes(year, value, color = version, linetype = version, 
-                    group = interaction(scenario, version))) +
+                    group = interaction(scenario, version)), linewidth = 0.75) +
       labs(x = NULL, title = "Stand Alone Hector Comparison",
            subtitle = v,
            y = RMSE_df_to_plot$units[1]) +
@@ -570,7 +572,8 @@ plots[[1]] +
   geom_point(data = tau_oh_benchmarks, 
              aes(year, value, color = name), size = 2) + 
   labs(subtitle = "gcam-hist tau OH", 
-       caption = "error bars from Stevenson et al 2020") -> 
+       caption = "error bars from Stevenson et al 2020") + 
+  scale_color_manual(values = COLOR_SCHEME) -> 
   p
 
 fname <- file.path(MAIN_FIGS,  paste0("hector_tauOH_wbench.", TYPE))
@@ -759,7 +762,7 @@ here("data", "auxiliary") %>%
 
 # Load the historical GCAM data 
 here("data") %>% 
-  list.files(pattern = "v320_rslts|v350_rslts", full.names = TRUE) %>% 
+  list.files(pattern = "v320_rslts|v355_rslts", full.names = TRUE) %>% 
   lapply(function(f){
     read.csv(f) %>% 
       mutate(year = as.integer(year)) %>% 
@@ -812,9 +815,9 @@ hector_hist %>%
       RMSE_tib
     
     ggplot() + 
-      geom_line(data = obs_to_plot, aes(year, value, color = "cmip7")) + 
+      geom_line(data = obs_to_plot, aes(year, value, color = "cmip7"), linewidth = 0.75) + 
       geom_line(data = hector_data, aes(year, value, color = version, 
-                                        linetype = version)) + 
+                                        linetype = version), linewidth = 0.75) + 
       scale_color_manual(values = COLOR_SCHEME) + 
       labs(x = NULL, y = hector_data$units[1]) + 
       theme(legend.title = element_blank(), legend.position = "bottom") +
@@ -855,10 +858,10 @@ tibble(x = -Inf,
   RMSE_tib
 
 ggplot() + 
-  geom_line(data = obs_to_plot, aes(year, value, color = "cmip7")) + 
+  geom_line(data = obs_to_plot, aes(year, value, color = "cmip7"), linewidth = 0.75) + 
   geom_ribbon(data = obs_to_plot, aes(year, ymin = lower, ymax = upper, fill = "cmip7"), alpha = 0.5) + 
   geom_line(data = hector_data, aes(year, value, color = version, 
-                                    linetype = version)) + 
+                                    linetype = version), linewidth = 0.75) + 
   scale_color_manual(values = COLOR_SCHEME) + 
   scale_fill_manual(values = COLOR_SCHEME) + 
   labs(x = NULL, y = hector_data$units[1]) + 
@@ -897,10 +900,10 @@ tibble(x = -Inf,
   RMSE_tib
 
 ggplot() + 
-  geom_line(data = obs_to_plot, aes(year, value, color = "cmip7")) + 
+  geom_line(data = obs_to_plot, aes(year, value, color = "cmip7"), linewidth = 0.75) + 
   geom_ribbon(data = obs_to_plot, aes(year, ymin = lower, ymax = upper, fill = "cmip7"), alpha = 0.5) + 
   geom_line(data = hector_data, aes(year, value, color = version, 
-                                    linetype = version)) + 
+                                    linetype = version), linewidth = 0.75) + 
   scale_color_manual(values = COLOR_SCHEME) + 
   scale_fill_manual(values = COLOR_SCHEME) + 
   labs(x = NULL, y = hector_data$units[1]) + 
@@ -918,7 +921,7 @@ ggsave(plot = ohc_obs_plots, filename = fname, width = WIDTH, height = HEIGHT)
 # 6. AR6 Comparison ------------------------------------------------------------
 ## 6A. Load Data  ---------------------------------------------------------------
 # Import the hector results that will be compared with the AR6 benchmarks values. 
-data.frame(rslts = list.files(here("data"), pattern = "v32|v35", full.names = TRUE)) %>% 
+data.frame(rslts = list.files(here("data"), pattern = "v32|v355", full.names = TRUE)) %>% 
   filter(grepl(pattern = "AR6", x = rslts)) %>% 
   pull(rslts) %>% 
   lapply(read.csv) %>% 
@@ -1003,7 +1006,9 @@ ggplot() +
   geom_errorbar(data = ipcc_his,
                 aes(variable, ymin = min, ymax = max),
                 width=.2, alpha = 0.5) +
-  geom_point(data = hec_his, aes(variable, value, color = version), alpha = 0.75) + 
+  geom_point(data = hec_his, aes(variable, value, color = version), 
+             position = position_jitter(height = 0, width = JW), 
+             alpha = 0.75) + 
   geom_point(data = scm_his, aes(variable, value, color = source),
              shape = 4, position = position_jitter(height = 0, width = JW)) +  
   geom_point(data = ipcc_his, aes(variable, value, color = "ipcc ar6"), shape = 4) +

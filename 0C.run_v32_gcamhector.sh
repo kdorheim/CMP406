@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # This script requires that you have the ability to run command line 
 # hector locally, and that the correct version is installed. 
-# The git tag --describe should return v3.2.0-12-g4bc2383 
+# git commit g4bc2383 off of gcam-integrationv3 branch 
 
 
 # Define separate paths
-HECTOR_EXEC="/Users/dorh012/Documents/Hector-WD/command_line/hector/src/hector"
+HECTOR_EXEC="/Users/dorh012/Documents/GCAM-WD/gcam-hector-old/hector/src/hector"
 INPUT_DIR="/Users/dorh012/Documents/GCAM-WD/CMPs/CMP406/inputs/old"
 INI_FILE="hector-gcam.ini"
 

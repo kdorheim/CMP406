@@ -25,7 +25,7 @@ AR6B.get_data <- function(file){
   ver <- unique(full_data$version)
   
   
-  if(ver %in% c("3.5.0", "3.2.0")){
+  if(ver %in% c("3.5.5", "3.5.0", "3.2.0")){
     
     aerosol_vars <- c("RF_BC", "RF_OC", "RF_NH3", "RF_SO2", "RF_aci")
     hist_warming <- c("global_tas")
@@ -279,7 +279,7 @@ AR6B.internal_hist_temp <- function(data){
 AR6B.get_historical_fxn <- function(rslts){
   
   rslts %>% 
-    filter(scenario == "ssp245") %>% 
+    filter(scenario == "gcam-hist") %>% 
     filter(year <= 2025) %>% 
     mutate(scenario = "historical") -> 
     data 
@@ -362,7 +362,7 @@ get_AR6_benchmarks <- function(file){
   # Emergent climate metrics
   TCRE <- AR6B.get_tcre_fxn(data)
   TCR  <- AR6B.get_tcr_fxn(data)
-  
+
   # Historical metrics 
   hist <- AR6B.get_historical_fxn(data)
   

@@ -1,6 +1,8 @@
 # Extract the results from the GCAM database! This script assumes that 
 # GCAM has already been run locally with the new model development we
 # would like to asses as part of the CMP. 
+# 
+# hector V3.5.5 coupled with GCAM 9.1 as part of CMP 406
 
 # 0. Set Up --------------------------------------------------------------------
 # Load the required CRAN packages
@@ -11,6 +13,8 @@ library(here)
 # The JGCRI packages
 library(rgcam)
 library(hector)
+stopifnot(packageVersion("hector") == '3.5.5')
+
 
 # DIR where the GCAM DB lives. 
 GCAM_DB_DIR <- here::here("dev-GCAM")
@@ -72,8 +76,9 @@ getQuery(prj_data,  "luc_emissions") %>%
   gcam_LUCemiss
 
 # Combine into a single data frame 
-gcam_emissions <- rbind(gcam_non_CO2emiss, gcam_CO2emiss, gcam_LUCemiss)
-
+rbind(gcam_non_CO2emiss, gcam_CO2emiss, gcam_LUCemiss) %>% 
+  summarise(value = mean(value), .by = c(year, variable, units, scenario, source, version)) -> 
+  gcam_emissions
 
 # 2. Extract Hector Output -----------------------------------------------------
 # Queries that are more hector focused rather than gcam emissions. 

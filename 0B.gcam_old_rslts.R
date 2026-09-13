@@ -29,7 +29,7 @@ query_file <- here("data", "auxiliary", "hector-queries.xml")
 
 # These results are structured differently, which each SSP being saved
 # into a different directory. 
-bd_names <- c(paste0("GCAM_SSP", 1:5), "GCAM_DB")
+bd_names <- c(paste0("database_basexdbGCAM_SSP", c(1, 3, 5)), "database_basexdbGCAM")
 
 # The data frame to save all the results in 
 rslts <- data.frame()
@@ -117,7 +117,6 @@ for(db in bd_names){
 
 
 # Format and save results 
-
 rslts %>% 
   mutate(scenario = if_else(scenario == "GCAM", "Reference", scenario)) %>% 
   filter(year > 1975) -> 
@@ -125,6 +124,3 @@ rslts %>%
 
 write.csv(rslts, file = file.path("data", "GCAM_old_rslts.csv"), 
           row.names = FALSE)
-
-
-

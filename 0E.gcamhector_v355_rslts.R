@@ -2,9 +2,11 @@
 # values, this will help us get a sense of how things are changing.... 
 
 # 0. Set Up --------------------------------------------------------------------
+HECTOR_TAG <- "3.5.5"
+
 library(dplyr)
 library(ggplot2)
-remotes::install_github("jgcri/hector@v3.5.0")
+remotes::install_github(paste0("jgcri/hector@v", HECTOR_TAG))
 library(hector)
 
 # Some custom helper functions that are used to calculate the summary stats 
@@ -19,9 +21,10 @@ INPUTS     <- here::here("inputs")
 # Data and variables to use 
 DATES      <- 1750:2100
 HIST_DATES <- 1750:2022
-VARS       <- c(GLOBAL_TAS(), RF_TOTAL(), RF_CO2(), RF_VOL(), RF_CH4(), 
-                CONCENTRATIONS_CH4(), "TAU_OH", CONCENTRATIONS_N2O(), RF_N2O(), 
-                CONCENTRATIONS_CO2(), HEAT_FLUX(), GMST())
+VARS       <- c("global_tas", "RF_tot", "RF_CO2", "RF_vol", "RF_CH4", "CH4_concentration", "TAU_OH", "N2O_concentration",
+                "RF_N2O", "CO2_concentration", "heatflux", "gmst", "RF_BC", "RF_OC", "RF_NH3", "RF_SO2",
+                "RF_aci", "RF_O3_trop", "RF_H2O_strat", "RF_albedo", "RF_misc")
+
 
 # Define the parameters used in the gcam-hector coupling. 
 list.files(DEV_INPUTS, pattern = "hector_params.csv", full.names = TRUE) %>% 
@@ -71,7 +74,7 @@ lapply(inis, function(ini){
   fetchvars(hc, DATES, VARS) %>% 
     mutate(scenario = scn) %>% 
     mutate(source = "hector", 
-           version = "V3.5.0") -> 
+           version = paste0("V", HECTOR_TAG)) -> 
     old
   
   return(old)
@@ -89,30 +92,30 @@ run(hc, runtodate = max(HIST_DATES))
 fetchvars(hc, HIST_DATES, VARS) %>% 
   mutate(scenario = "gcam-hist") %>% 
   mutate(source = "hector", 
-         version = "V3.5.0") -> 
+         version = paste0("V", HECTOR_TAG)) -> 
   gcam_hist
 
-# Recall that GCAM users are going to be looking at the temp anomaly relative
-# to the 1850:1900 reference period, let's make sure that we normalize those temp 
-# results. 
-gcam_hist %>% 
-  filter(year %in% 1850:1900) %>% 
-  filter(variable == GLOBAL_TAS()) %>% 
-  summarise(ref = mean(value), .by = variable) -> 
-  ref_value 
-
-gcam_hist %>% 
-  filter(variable == GLOBAL_TAS()) %>% 
-  full_join(ref_value) %>% 
-  replace(is.na(.), 0) %>% 
-  mutate(value = value - ref) %>% 
-  select(-ref) -> 
-  normalized_global_tas
-
-gcam_hist %>% 
-  filter(!variable == GLOBAL_TAS()) %>% 
-  bind_rows(normalized_global_tas) -> 
-  gcam_hist
+# # Recall that GCAM users are going to be looking at the temp anomaly relative
+# # to the 1850:1900 reference period, let's make sure that we normalize those temp 
+# # results. 
+# gcam_hist %>% 
+#   filter(year %in% 1850:1900) %>% 
+#   filter(variable == GLOBAL_TAS()) %>% 
+#   summarise(ref = mean(value), .by = variable) -> 
+#   ref_value 
+# 
+# gcam_hist %>% 
+#   filter(variable == GLOBAL_TAS()) %>% 
+#   full_join(ref_value) %>% 
+#   replace(is.na(.), 0) %>% 
+#   mutate(value = value - ref) %>% 
+#   select(-ref) -> 
+#   normalized_global_tas
+# 
+# gcam_hist %>% 
+#   filter(!variable == GLOBAL_TAS()) %>% 
+#   bind_rows(normalized_global_tas) -> 
+#   gcam_hist
 
 # 3. Idealized Inputs ---------------------------------------------------------
 variables <- c("global_tas", "gmst", "land_tas", "RF_tot",
@@ -138,7 +141,7 @@ data.frame(inis = list.files(DEV_INPUTS, pattern = "ini", full.names = TRUE)) %>
   idealized_v35
 
 idealized_v35 %>% 
-  mutate(version = "V3.5.0", 
+  mutate(version = paste0("V", HECTOR_TAG), 
          source = "hector") -> 
   idealized_v35
 
@@ -149,11 +152,11 @@ idealized_v35 %>%
 # AR6 results. 
 temp_file <- tempfile()
 
-rbind(full_out, idealized_v35) %>% 
+rbind(full_out, idealized_v35, gcam_hist) %>% 
   select(version, value, year, variable, scenario, units) %>% 
   mutate(year = paste0("X", year)) %>% 
   pivot_wider(names_from = year) %>%  
-  mutate(version = '3.5.0') -> 
+  mutate(version = HECTOR_TAG) -> 
   o 
 
 write.csv(o, file = temp_file, row.names = FALSE)
@@ -165,6 +168,6 @@ file.remove(temp_file)
 # z. Save Results --------------------------------------------------------------
 
 out <- rbind(full_out, gcam_hist)
-write.csv(out, file = file.path(WIRTE_TO, "hector_v350_rslts.csv"), row.names = FALSE)
-write.csv(idealized_v35, file = file.path(WIRTE_TO, "hector_v350_idealized_rslts.csv"), row.names = FALSE)
-write.csv(ar6_out, file = file.path(WIRTE_TO, "hector_v350_AR6_rslts.csv"), row.names = FALSE)
+write.csv(out, file = file.path(WIRTE_TO, "hector_v355_rslts.csv"), row.names = FALSE)
+write.csv(idealized_v35, file = file.path(WIRTE_TO, "hector_v355_idealized_rslts.csv"), row.names = FALSE)
+write.csv(ar6_out, file = file.path(WIRTE_TO, "hector_v355_AR6_rslts.csv"), row.names = FALSE)
